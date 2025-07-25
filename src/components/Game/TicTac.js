@@ -32,7 +32,7 @@ function TicTacToe({ player1, player2, setStartGame }) {
   useEffect(() => {
     setTimeout(() => {
       setShowWishes(false);
-    }, 200000);
+    }, 2000);
   }, []);
 
   useEffect(() => {
