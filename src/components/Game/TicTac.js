@@ -1,10 +1,10 @@
-import React, { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import "./styles.css";
 
 function TicTacToe({ player1, player2, setStartGame }) {
   const [showWishes, setShowWishes] = useState(true);
   const [currentPlayer, setCurrentPlayer] = useState(player1);
-  const [firstPlayerClick, setFirstPlayerClick] = useState(true);
+  const [firstPlayerClick, setFirstPlayerClick] = useState(Math.random() < 0.5);
 
   const [playerOneWinCount, setPlayerOneWinCount] = useState(0);
   const [playerTwoWinCount, setPlayerTwoWinCount] = useState(0);
@@ -15,17 +15,6 @@ function TicTacToe({ player1, player2, setStartGame }) {
 
   let initialGameInfo = ["", "", "", "", "", "", "", "", ""];
 
-  const winCombinations = [
-    [0, 1, 2],
-    [3, 4, 5],
-    [6, 7, 8],
-    [0, 3, 6],
-    [1, 4, 7],
-    [2, 5, 8],
-    [0, 4, 8],
-    [2, 4, 6],
-  ];
-
   const [gameInfo, setGameInfo] = useState(initialGameInfo);
   const [dataForReview, setDataForReview] = useState([]);
 
@@ -35,7 +24,21 @@ function TicTacToe({ player1, player2, setStartGame }) {
     }, 2000);
   }, []);
 
+  const getCurrentPlayer = () => {
+    firstPlayerClick ? setCurrentPlayer(player1) : setCurrentPlayer(player2);
+  };
+
   useEffect(() => {
+    const winCombinations = [
+      [0, 1, 2],
+      [3, 4, 5],
+      [6, 7, 8],
+      [0, 3, 6],
+      [1, 4, 7],
+      [2, 5, 8],
+      [0, 4, 8],
+      [2, 4, 6],
+    ];
     for (let combo of winCombinations) {
       const [a, b, c] = combo;
       if (
@@ -48,6 +51,7 @@ function TicTacToe({ player1, player2, setStartGame }) {
         currentPlayer === player1
           ? setPlayerOneWinCount((prev) => prev + 1)
           : setPlayerTwoWinCount((prev) => prev + 1);
+        return;
       }
     }
 
@@ -56,12 +60,12 @@ function TicTacToe({ player1, player2, setStartGame }) {
     }
 
     getCurrentPlayer();
-  }, [gameInfo]);
+  }, [gameInfo, currentPlayer, player1]);
 
   const displayWishes = () => {
     return (
       <div className="wishesBox">
-        <h2 className="letsBeginText">Let's Begin the game </h2>
+        <h2 className="letsBeginText">Let's Begin the Game </h2>
         <h2 className="wishes">All the Best !! </h2>
       </div>
     );
@@ -69,9 +73,6 @@ function TicTacToe({ player1, player2, setStartGame }) {
 
   const getValue = () => {
     return firstPlayerClick ? "O" : "X";
-  };
-  const getCurrentPlayer = () => {
-    firstPlayerClick ? setCurrentPlayer(player1) : setCurrentPlayer(player2);
   };
 
   const handlePlayerclick = (index) => {
@@ -84,7 +85,6 @@ function TicTacToe({ player1, player2, setStartGame }) {
 
     let dataForReviewCopy = dataForReview;
     dataForReviewCopy.push(index);
-    console.log("dataForReviewCopy", dataForReviewCopy);
     setDataForReview(dataForReviewCopy);
   };
 
@@ -111,35 +111,45 @@ function TicTacToe({ player1, player2, setStartGame }) {
   const handleReMatch = () => {
     clearFields();
     setDataForReview([]);
+    setFirstPlayerClick(Math.random() < 0.5);
   };
   const handleReview = () => {
     console.log("review");
+  };
+
+  const getDisplayName = (fullName, requiredLength) => {
+    let firstName = fullName.split(" ")[0];
+    return firstName.length < requiredLength
+      ? firstName
+      : `${firstName.substring(0, requiredLength)}...`;
   };
 
   const renderStatus = () => {
     if (winner) {
       return (
         <h2 className="winnerText">
-          Hurray, Congratulations - {winner} WON !!!
+          Hurray, Congratulations - {getDisplayName(winner, 10)} WON !!!
         </h2>
       );
     } else if (isDraw) {
       return <h2 className="drawText">DRAW </h2>;
     } else {
-      return <h2>{currentPlayer}'s Turn</h2>;
+      return <h2>{getDisplayName(currentPlayer, 10)}'s Turn</h2>;
     }
   };
 
   const renderWinCount = () => {
     return (
-      <div className="winStatusContainer">
-        <h3>
-          {player1} : {playerOneWinCount}
-        </h3>
-        <h3>
-          {player2} : {playerTwoWinCount}
-        </h3>
-      </div>
+      <>
+        <div className="winStatusContainer">
+          <h3>{getDisplayName(player1, 10)}</h3>
+          <h3>{getDisplayName(player2, 10)}</h3>
+        </div>
+        <div className="winStatusContainer">
+          <h3>{playerOneWinCount}</h3>
+          <h3>{playerTwoWinCount}</h3>
+        </div>
+      </>
     );
   };
 
@@ -170,7 +180,7 @@ function TicTacToe({ player1, player2, setStartGame }) {
                 onClick={() => handlePlayerclick(index)}
                 disabled={item !== "" || winner}
               >
-                {item}
+                <span className={item === "X" ? "xMark" : "oMark"}>{item}</span>
               </button>
             );
           })}
@@ -189,13 +199,13 @@ function TicTacToe({ player1, player2, setStartGame }) {
           >
             Re-Match
           </button>
-          <button
+          {/* <button
             className="reviewButton"
             onClick={handleReview}
             disabled={setDisabled()}
           >
             Review Game
-          </button>
+          </button> */}
         </div>
       </div>
     );

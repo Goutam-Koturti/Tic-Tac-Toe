@@ -39,9 +39,4 @@ function App() {
 
 export default App;
 
-// won cells color
-// Rematch - wins and losses
 // Game analysis
-// dark and light theme toggle
-// X and O - different colors
-// Responsive
