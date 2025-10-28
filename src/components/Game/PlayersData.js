@@ -8,8 +8,16 @@ function PlayersData({
   setPlayer2,
   handleStartGame,
 }) {
+  const handleNameChange = (e, setPlayer) => {
+    const value = e.target.value;
+    const validPattern = /^[a-zA-Z0-9\s]*$/;
+    if (validPattern.test(value)) {
+      setPlayer(value);
+    }
+  };
+
   const isDisabled = () => {
-    return player1 === "" || player2 === "";
+    return player1.trim() === "" || player2.trim() === "";
   };
 
   return (
@@ -20,14 +28,14 @@ function PlayersData({
           type="text"
           placeholder="Enter Player 1 Name"
           value={player1}
-          onChange={(e) => setPlayer1(e.target.value)}
+          onChange={(e) => handleNameChange(e, setPlayer1)}
           className="input"
         />
         <input
           type="text"
           placeholder="Enter Player 2 Name"
           value={player2}
-          onChange={(e) => setPlayer2(e.target.value)}
+          onChange={(e) => handleNameChange(e, setPlayer2)}
           className="input"
         />
         <button
