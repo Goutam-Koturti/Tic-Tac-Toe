@@ -1,33 +1,44 @@
 import { useEffect, useState } from "react";
 import "./styles.css";
+import {
+  renderWishes,
+  isRematchDisabled,
+  renderWinCount,
+  currentSymbol,
+  renderStatus,
+} from "./helper";
 
 function TicTacToe({ player1, player2, setStartGame }) {
-  const [showWishes, setShowWishes] = useState(true);
-  const [currentPlayer, setCurrentPlayer] = useState(player1);
-  const [firstPlayerClick, setFirstPlayerClick] = useState(Math.random() < 0.5);
+  const [showIntro, setShowIntro] = useState(true);
+  const [activePlayer, setActivePlayer] = useState(player1);
 
-  const [playerOneWinCount, setPlayerOneWinCount] = useState(0);
-  const [playerTwoWinCount, setPlayerTwoWinCount] = useState(0);
+  //Randomly decides who will be the first to click
+  const [isFirstPlayerClick, setIsFirstPlayerClick] = useState(
+    Math.random() < 0.5
+  );
+
+  const [winsPlayerOne, setWinsPlayerOne] = useState(0);
+  const [winsPlayerTwo, setWinsPlayerTwo] = useState(0);
 
   const [isDraw, setIsDraw] = useState(false);
   const [winner, setWinner] = useState("");
-  const [winCells, setWinCells] = useState([]);
+  const [winningIndices, setWinningIndices] = useState([]);
 
-  let initialGameInfo = ["", "", "", "", "", "", "", "", ""];
+  const EMPTY_BOARD = ["", "", "", "", "", "", "", "", ""];
+  const [boardState, setBoardState] = useState(EMPTY_BOARD);
 
-  const [gameInfo, setGameInfo] = useState(initialGameInfo);
-  const [dataForReview, setDataForReview] = useState([]);
+  const [moveHistory, setMoveHistory] = useState([]);
 
+  // --- Effects ---
+
+  // Hide the wishes/intro after 2 seconds (exactly same as original behavior)
   useEffect(() => {
     setTimeout(() => {
-      setShowWishes(false);
+      setShowIntro(false);
     }, 2000);
   }, []);
 
-  const getCurrentPlayer = () => {
-    firstPlayerClick ? setCurrentPlayer(player1) : setCurrentPlayer(player2);
-  };
-
+  // Check winning combinations and draw on every boardState update
   useEffect(() => {
     const winCombinations = [
       [0, 1, 2],
@@ -39,53 +50,47 @@ function TicTacToe({ player1, player2, setStartGame }) {
       [0, 4, 8],
       [2, 4, 6],
     ];
+
     for (let combo of winCombinations) {
       const [a, b, c] = combo;
       if (
-        gameInfo[a] &&
-        gameInfo[a] === gameInfo[b] &&
-        gameInfo[b] === gameInfo[c]
+        boardState[a] &&
+        boardState[a] === boardState[b] &&
+        boardState[b] === boardState[c]
       ) {
-        setWinner(currentPlayer);
-        setWinCells([a, b, c]);
-        currentPlayer === player1
-          ? setPlayerOneWinCount((prev) => prev + 1)
-          : setPlayerTwoWinCount((prev) => prev + 1);
+        // Set winner to the currently tracked player name
+        setWinner(activePlayer);
+        setWinningIndices([a, b, c]);
+
+        // Update scoreboard counts exactly as original
+        activePlayer === player1
+          ? setWinsPlayerOne((prev) => prev + 1)
+          : setWinsPlayerTwo((prev) => prev + 1);
+
         return;
       }
     }
 
-    if (gameInfo.every((cell) => cell !== "")) {
+    // If all cells are filled and no winner -> draw
+    if (boardState.every((cell) => cell !== "")) {
       setIsDraw(true);
     }
 
-    getCurrentPlayer();
-  }, [gameInfo, currentPlayer, player1]);
+    // Keep activePlayer in sync with isFirstPlayerClick as original
+    isFirstPlayerClick ? setActivePlayer(player1) : setActivePlayer(player2);
+  }, [boardState, activePlayer, player1, player2, isFirstPlayerClick]);
 
-  const displayWishes = () => {
-    return (
-      <div className="wishesBox">
-        <h2 className="letsBeginText">Let's Begin the Game </h2>
-        <h2 className="wishes">All the Best !! </h2>
-      </div>
-    );
-  };
+  const handleCellClick = (index) => {
+    let nextToggle = isFirstPlayerClick;
+    setIsFirstPlayerClick(!nextToggle);
 
-  const getValue = () => {
-    return firstPlayerClick ? "O" : "X";
-  };
+    let boardCopy = [...boardState];
+    boardCopy[index] = currentSymbol(isFirstPlayerClick);
+    setBoardState(boardCopy);
 
-  const handlePlayerclick = (index) => {
-    let newPlayer = firstPlayerClick;
-    setFirstPlayerClick(!newPlayer);
-
-    let gameInfoCopy = [...gameInfo];
-    gameInfoCopy[index] = getValue();
-    setGameInfo(gameInfoCopy);
-
-    let dataForReviewCopy = dataForReview;
-    dataForReviewCopy.push(index);
-    setDataForReview(dataForReviewCopy);
+    let historyCopy = moveHistory;
+    historyCopy.push(index);
+    setMoveHistory(historyCopy);
   };
 
   const handleBack = () => {
@@ -93,91 +98,46 @@ function TicTacToe({ player1, player2, setStartGame }) {
   };
 
   const clearFields = () => {
-    setShowWishes("");
-    setCurrentPlayer(player1);
-    setFirstPlayerClick(true);
+    setShowIntro("");
+    setActivePlayer(player1);
+    setIsFirstPlayerClick(true);
     setIsDraw(false);
     setWinner("");
-    setWinCells([]);
-    setGameInfo(initialGameInfo);
+    setWinningIndices([]);
+    setBoardState(EMPTY_BOARD);
   };
 
   const handleReset = () => {
     clearFields();
-    setPlayerOneWinCount(0);
-    setPlayerTwoWinCount(0);
-    setDataForReview([]);
+    setWinsPlayerOne(0);
+    setWinsPlayerTwo(0);
+    setMoveHistory([]);
   };
+
   const handleReMatch = () => {
     clearFields();
-    setDataForReview([]);
-    setFirstPlayerClick(Math.random() < 0.5);
-  };
-  const handleReview = () => {
-    console.log("review");
+    setMoveHistory([]);
+    setIsFirstPlayerClick(Math.random() < 0.5);
   };
 
-  const getDisplayName = (fullName, requiredLength) => {
-    let firstName = fullName.split(" ")[0];
-    return firstName.length < requiredLength
-      ? firstName
-      : `${firstName.substring(0, requiredLength)}...`;
-  };
-
-  const renderStatus = () => {
-    if (winner) {
-      return (
-        <h2 className="winnerText">
-          Hurray, Congratulations - {getDisplayName(winner, 10)} WON !!!
-        </h2>
-      );
-    } else if (isDraw) {
-      return <h2 className="drawText">DRAW </h2>;
-    } else {
-      return <h2>{getDisplayName(currentPlayer, 10)}'s Turn</h2>;
-    }
-  };
-
-  const renderWinCount = () => {
-    return (
-      <>
-        <div className="winStatusContainer">
-          <h3>{getDisplayName(player1, 10)}</h3>
-          <h3>{getDisplayName(player2, 10)}</h3>
-        </div>
-        <div className="winStatusContainer">
-          <h3>{playerOneWinCount}</h3>
-          <h3>{playerTwoWinCount}</h3>
-        </div>
-      </>
-    );
-  };
-
-  const setDisabled = () => {
-    if (isDraw) {
-      return false;
-    }
-    if (winner) {
-      return false;
-    }
-    return true;
-  };
-
-  const displayGame = () => {
+  // Main game UI renderer
+  const renderGame = () => {
     return (
       <div>
-        {renderWinCount()}
-        <div className="statusDiv">{renderStatus()}</div>
+        {renderWinCount(player1, player2, winsPlayerOne, winsPlayerTwo)}
+        <div className="statusDiv">
+          {renderStatus(winner, isDraw, activePlayer)}
+        </div>
 
         <div className="gameContainer">
-          {gameInfo.map((item, index) => {
+          {boardState.map((item, index) => {
             return (
               <button
                 key={index}
                 className={`playerValueBox ${
-                  winCells.includes(index) ? "winCells" : ""
+                  winningIndices.includes(index) ? "winCells" : ""
                 }`}
-                onClick={() => handlePlayerclick(index)}
+                onClick={() => handleCellClick(index)}
                 disabled={item !== "" || winner}
               >
                 <span className={item === "X" ? "xMark" : "oMark"}>{item}</span>
@@ -195,23 +155,17 @@ function TicTacToe({ player1, player2, setStartGame }) {
           <button
             className="rematchButton"
             onClick={handleReMatch}
-            disabled={setDisabled()}
+            disabled={isRematchDisabled(isDraw, winner)}
           >
             Re-Match
           </button>
-          {/* <button
-            className="reviewButton"
-            onClick={handleReview}
-            disabled={setDisabled()}
-          >
-            Review Game
-          </button> */}
         </div>
       </div>
     );
   };
 
-  return <div>{showWishes ? displayWishes() : displayGame()}</div>;
+  // Rendering decision
+  return <div>{showIntro ? renderWishes() : renderGame()}</div>;
 }
 
 export default TicTacToe;
